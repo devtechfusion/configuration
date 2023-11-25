@@ -1,1 +1,53 @@
+sudo yum install epel-release
+sudo yum install nginx
+sudo systemctl start nginx
+sudo systemctl enable nginx
 
+
+
+---- FireWall Config ----
+sudo firewall-cmd --permanent --zone=public --add-service=http
+sudo firewall-cmd --permanent --zone=public --add-service=https
+sudo firewall-cmd --reload
+
+Shared Location
+----------------------
+/usr/share/nginx/html
+
+uupstream http2_service {
+    server 3.93.194.141:80;
+}
+
+upstream http_service {
+    server 18.234.82.114:80;
+}
+
+server {
+    listen 80 default_server;  # Added default_server to handle unmatched requests
+    server_name 192.168.1.5;
+
+    location / {
+        proxy_pass http://http_service;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+}
+
+server {
+    listen 8080 default_server;  # Added default_server to handle unmatched requests
+    server_name 192.168.1.5:8080;
+
+    location / {
+        proxy_pass http://http2_service;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+}
